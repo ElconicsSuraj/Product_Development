@@ -1,0 +1,103 @@
+#include <WiFi.h>
+#include <PubSubClient.h>
+
+const char* ssid = "Elconics";
+const char* password = "Elconics@123";
+
+// ThingsBoard MQTT server and device token
+const char* thingsboardServer = "broker.emqx.io";
+const int mqttPort = 1883;
+const char* accessToken = "";         
+
+WiFiClient wifiClient;
+PubSubClient client(wifiClient);
+
+void setupWiFi() 
+{
+  delay(10);
+  Serial.println();
+  Serial.print("Connecting to Wi-Fi: ");
+  Serial.println(ssid);
+
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) 
+  {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println();
+  Serial.println("Wi-Fi connected!");
+  Serial.print("IP Address: ");
+  Serial.println(WiFi.localIP());
+}
+
+
+void callback(char* topic, byte* payload, unsigned int length) 
+{
+  Serial.print("Downlink arrived on topic: ");
+  Serial.println(topic);
+
+  Serial.print("Downlink Data: ");
+  for (int i = 0; i < length; i++) 
+  {
+    Serial.print((char)payload[i]);
+  }
+  Serial.println();
+}
+
+void reconnect() 
+{
+  while (!client.connected()) 
+  {
+    Serial.print("Attempting MQTT connection...");
+
+    if (client.connect("", accessToken, NULL)) 
+    {
+      Serial.println("connected!");
+
+      client.subscribe("tb/mqtt-integration-tutorial/sensors/SN-003/rx");
+    } 
+    else 
+    {
+      Serial.print("failed, rc=");
+      Serial.print(client.state());
+      Serial.println("try again in 5 seconds...");
+      delay(5000);
+    }
+  }
+}
+
+
+void sendTelemetry() 
+{
+  String payload = "{\"value\":764384}";
+  Serial.print("Publishing telemetry: ");
+  Serial.println(payload);
+
+  client.publish("tb/mqtt-integration-tutorial/sensors/SN-003/temperature", payload.c_str());
+}
+
+void setup() 
+{
+  Serial.begin(115200);
+
+  setupWiFi();
+
+  client.setServer(thingsboardServer, mqttPort);
+  client.setCallback(callback);
+
+  reconnect();
+}
+
+void loop() 
+{
+  if (!client.connected()) 
+  {
+    reconnect();
+  }
+
+  client.loop();
+
+   sendTelemetry();
+  delay(2000);
+}
