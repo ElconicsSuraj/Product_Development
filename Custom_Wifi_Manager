@@ -1,0 +1,45 @@
+#include <WiFiManager.h>
+#include <WiFi.h>
+
+void setup() 
+{
+    Serial.begin(115200);
+  
+    WiFiManager wm;
+
+    WiFi.mode(WIFI_STA);
+
+    delay(1000);
+
+    String mac = WiFi.macAddress();
+    const char* mac_id = mac.c_str();
+
+    WiFiManagerParameter thingsboard_url("param1", "Thingsboard URL", "", 256);
+    WiFiManagerParameter device_name("param2", "Device Name", mac_id, 128);
+    WiFiManagerParameter mqtt_topic("param3", "MQTT Topic","", 256);
+
+    wm.addParameter(&thingsboard_url);
+    wm.addParameter(&device_name);
+     wm.addParameter(&mqtt_topic);
+
+    if (!wm.startConfigPortal(mac_id)) 
+    {
+        Serial.println("Failed to connect.");
+    }
+
+    // Retrieve custom parameter values
+    String thingsboard_url_value = thingsboard_url.getValue();
+    String device_name_value = device_name.getValue();
+    String MQTT_TOPIC = mqtt_topic.getValue();
+
+    Serial.println("Thingsboard URL: " + thingsboard_url_value);
+    Serial.println("Device Name: " + device_name_value);
+      Serial.println("Device Name: " + MQTT_TOPIC);
+    //  String    getWiFiSSID(bool persistent = true);
+    //  Serial.println(getWiFiSSID());
+}
+
+void loop() 
+{
+    // Your main loop code
+}
